@@ -1,6 +1,12 @@
 Experimental lx branded zone for openSUSE Leap 42.2
 
-Current status: **broken**
+Current status: **it works**
+
+# SmartOS Requirements
+
+* SmartOS: > 20170913T233706Z
+* https://us-east.manta.joyent.com/Joyent_Dev/public/SmartOS/smartos.html#20170913T233706Z
+* https://smartos.org/bugview/OS-6326
 
 # Requirements
 
@@ -83,47 +89,3 @@ Then start the zone by doing:
 vmadm create -f opensuse.json
 ```
 
-# The issue
-
-The image won't start because of the following error:
-
-```
-Command failed: zone '8742b92b-a750-6e0f-ca05-ab4272263862': ERROR: Unsupported distribution!
-zone '8742b92b-a750-6e0f-ca05-ab4272263862': exec /usr/lib/brand/lx/lx_boot 8742b92b-a750-6e0f-ca05-ab4272263862 /zones/8742b92b-a750-6e0f-ca05-ab4272263862 failed
-zoneadm: zone '8742b92b-a750-6e0f-ca05-ab4272263862': call to zoneadmd failed
-```
-
-This happens because the `/usr/lib/brand/lx/lx_boot` doesn't know about openSUSE:
-
-```bash
-#
-# Determine the distro.
-#
-distro=""
-if [[ $(zonecfg -z $ZONENAME info attr name=docker) =~ "value: true" ]]; then
-        distro="docker"
-elif [[ -f $ZONEROOT/etc/redhat-release ]]; then
-        distro="redhat"
-elif [[ -f $ZONEROOT/etc/lsb-release ]]; then
-        if egrep -s Ubuntu $ZONEROOT/etc/lsb-release; then
-                distro="ubuntu"
-        elif [[ -f $ZONEROOT/etc/debian_version ]]; then
-                distro="debian"
-        fi
-elif [[ -f $ZONEROOT/etc/debian_version ]]; then
-        distro="debian"
-elif [[ -f $ZONEROOT/etc/alpine-release ]]; then
-        distro="busybox"
-fi
-
-[[ -z $distro ]] && fatal "Unsupported distribution!"
-```
-
-Unfortunately this file is located on a read-only file system, hence it cannot
-be modified.
-
-I've tried to trick the check into thinking this is a Red Hat system, but the
-`vmadm` got stuck and timed out after some time.
-
-This doesn't surprise me, I looked into the `lx_boot_zone_redhat` file and I doubt
-these instructions could work on openSUSE... :(
